@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+
+# Skyfield ephemeris cache
+~/.skyfield/
+
+# pytest
+.pytest_cache/
+
+# Editors
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+
+.claude/
+Pipfile
+pyproject.toml

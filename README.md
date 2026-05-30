@@ -2,6 +2,8 @@
 
 Calculates blue moons — the second full moon in a calendar month — using precise astronomical ephemeris data. Times are reported in the system's local timezone.
 
+Created to support  https://www.wral.com/weather/blue-moon-may-2026/ 
+
 ## Requirements
 
 - Python 3.11+

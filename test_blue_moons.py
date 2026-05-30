@@ -113,6 +113,21 @@ class TestNextBlueMoon:
         result = next_blue_moon()
         assert result.tzinfo == _LOCAL_TZ
 
+    def test_n2_returns_second_upcoming(self):
+        anchor = KNOWN_BLUE_MOONS[0] - __import__("datetime").timedelta(days=1)
+        first = next_blue_moon(anchor, n=1)
+        second = next_blue_moon(anchor, n=2)
+        assert _approx_equal(first, KNOWN_BLUE_MOONS[1])
+        assert _approx_equal(second, KNOWN_BLUE_MOONS[2])
+
+    def test_n2_is_after_n1(self):
+        now = __import__("datetime").datetime.now(_LOCAL_TZ)
+        assert next_blue_moon(now, n=2) > next_blue_moon(now, n=1)
+
+    def test_n1_matches_default(self):
+        anchor = KNOWN_BLUE_MOONS[0]
+        assert next_blue_moon(anchor, n=1) == next_blue_moon(anchor)
+
 
 class TestPreviousBlueMoon:
     def test_previous_from_just_after_known(self):

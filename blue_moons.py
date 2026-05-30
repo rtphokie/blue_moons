@@ -80,19 +80,24 @@ def blue_moons_in_range(start_year: int, end_year: int) -> list[datetime]:
     return [b for b in _blue_moons_from_list(moons) if start_year <= b.year <= end_year]
 
 
-def next_blue_moon(after: datetime | None = None) -> datetime:
-    """Return the next blue moon after the given datetime (default: now, local time)."""
+def next_blue_moon(after: datetime | None = None, n: int = 1) -> datetime:
+    """Return the nth next blue moon after the given datetime (default: now, local time).
+
+    n=1 returns the next blue moon, n=2 the one after that, etc.
+    """
     after = after or datetime.now(_LOCAL_TZ)
     # Start 35 days early so we capture the first full moon of the current month,
     # which is needed to correctly classify the second one as a blue moon.
     search_start = after - timedelta(days=35)
-    search_end = datetime(after.year + 3, after.month + 1, 1, tzinfo=timezone.utc)
+    # Each blue moon is ~2.7 years apart; give a comfortable margin per n
+    search_years = max(3, n * 3)
+    search_end = datetime(after.year + search_years, after.month + 1, 1, tzinfo=timezone.utc)
     moons = _full_moons_in_range(search_start, search_end)
     blues = _blue_moons_from_list(moons)
     future = [b for b in blues if b > after]
-    if not future:
-        raise ValueError("No blue moon found in the next 3 years — expand search range")
-    return future[0]
+    if len(future) < n:
+        raise ValueError(f"Found only {len(future)} blue moon(s) in the search range — expand search range")
+    return future[n - 1]
 
 
 def previous_blue_moon(before: datetime | None = None) -> datetime:
@@ -136,8 +141,8 @@ Examples:
                    help="Count blue moons in a single year")
     p.add_argument("--range", nargs=2, type=int, metavar=("START", "END"),
                    help="Count blue moons over a range of years")
-    p.add_argument("--next", action="store_true",
-                   help="Show the next blue moon from today")
+    p.add_argument("--next", nargs="?", const=1, type=int, metavar="N",
+                   help="Show the next N blue moons from today (default: 1)")
     p.add_argument("--previous", action="store_true",
                    help="Show the previous blue moon before today")
     return p
@@ -147,7 +152,7 @@ def main():
     parser = _build_parser()
     args = parser.parse_args()
 
-    if not any([args.year, args.range, args.next, args.previous]):
+    if not any([args.year, args.range, args.next is not None, args.previous]):
         parser.print_help()
         return
 
@@ -166,9 +171,12 @@ def main():
         for b in blues:
             print(f"  {_fmt(b)}")
 
-    if args.next:
-        b = next_blue_moon()
-        print(f"\nNext blue moon:     {_fmt(b)}")
+    if args.next is not None:
+        count = args.next
+        for i in range(1, count + 1):
+            b = next_blue_moon(n=i)
+            label = "Next blue moon:" if count == 1 else f"Next blue moon #{i}:"
+            print(f"\n{label:20} {_fmt(b)}")
 
     if args.previous:
         b = previous_blue_moon()

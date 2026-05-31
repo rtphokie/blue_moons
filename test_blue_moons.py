@@ -5,6 +5,8 @@ from blue_moons import (
     blue_moons_in_range,
     next_blue_moon,
     previous_blue_moon,
+    moon_distance_km,
+    moon_label,
     _LOCAL_TZ,
 )
 
@@ -117,8 +119,8 @@ class TestNextBlueMoon:
         anchor = KNOWN_BLUE_MOONS[0] - __import__("datetime").timedelta(days=1)
         first = next_blue_moon(anchor, n=1)
         second = next_blue_moon(anchor, n=2)
-        assert _approx_equal(first, KNOWN_BLUE_MOONS[1])
-        assert _approx_equal(second, KNOWN_BLUE_MOONS[2])
+        assert _approx_equal(first, KNOWN_BLUE_MOONS[0])
+        assert _approx_equal(second, KNOWN_BLUE_MOONS[1])
 
     def test_n2_is_after_n1(self):
         now = __import__("datetime").datetime.now(_LOCAL_TZ)
@@ -163,3 +165,34 @@ class TestPreviousBlueMoon:
     def test_returns_local_datetime(self):
         result = previous_blue_moon()
         assert result.tzinfo == _LOCAL_TZ
+
+
+class TestMoonDistanceAndLabel:
+    # Aug 30, 2023 blue moon: 357,341 km → supermoon
+    SUPERMOON = KNOWN_BLUE_MOONS[1]
+    # Oct 31, 2020 blue moon: 406,167 km → micromoon
+    MICROMOON = KNOWN_BLUE_MOONS[0]
+    # Dec 31, 2028 blue moon: 377,604 km → neither
+    ORDINARY = KNOWN_BLUE_MOONS[3]
+
+    def test_distance_returns_float(self):
+        assert isinstance(moon_distance_km(self.SUPERMOON), float)
+
+    def test_supermoon_distance_below_threshold(self):
+        assert moon_distance_km(self.SUPERMOON) <= 360_000
+
+    def test_micromoon_distance_above_threshold(self):
+        assert moon_distance_km(self.MICROMOON) >= 405_500
+
+    def test_ordinary_distance_in_range(self):
+        d = moon_distance_km(self.ORDINARY)
+        assert 360_000 < d < 405_500
+
+    def test_label_supermoon(self):
+        assert moon_label(self.SUPERMOON) == "supermoon"
+
+    def test_label_micromoon(self):
+        assert moon_label(self.MICROMOON) == "micromoon"
+
+    def test_label_ordinary_is_none(self):
+        assert moon_label(self.ORDINARY) is None

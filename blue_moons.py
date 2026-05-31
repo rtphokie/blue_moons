@@ -26,6 +26,11 @@ _LOCAL_TZ = datetime.now().astimezone().tzinfo
 
 FULL_MOON = 2  # almanac.moon_phases index for full moon
 
+# Distance thresholds (km) — Sky & Telescope / TimeandDate.com definitions.
+# Average Earth-Moon distance is ~384,400 km.
+_SUPERMOON_KM = 360_000   # full moon at or closer → supermoon
+_MICROMOON_KM = 405_500   # full moon at or farther → micromoon
+
 
 # ---------------------------------------------------------------------------
 # Core helpers
@@ -57,6 +62,32 @@ def _is_blue_moon(moons: list[datetime], idx: int) -> bool:
 
 def _blue_moons_from_list(moons: list[datetime]) -> list[datetime]:
     return [m for i, m in enumerate(moons) if _is_blue_moon(moons, i)]
+
+
+# ---------------------------------------------------------------------------
+# Supermoon / micromoon
+# ---------------------------------------------------------------------------
+
+def moon_distance_km(dt: datetime) -> float:
+    """Return the Earth-Moon center-to-center distance in km at the given datetime."""
+    t = _TS.from_datetime(dt.astimezone(timezone.utc))
+    return (_EPH["moon"] - _EPH["earth"]).at(t).distance().km
+
+
+def moon_label(dt: datetime) -> str | None:
+    """Return 'supermoon', 'micromoon', or None for the full moon at dt.
+
+    Uses Sky & Telescope / TimeandDate.com distance thresholds:
+      supermoon  ≤ 360,000 km
+      micromoon  ≥ 405,500 km
+    (average Earth-Moon distance is ~384,400 km)
+    """
+    d = moon_distance_km(dt)
+    if d <= _SUPERMOON_KM:
+        return "supermoon"
+    if d >= _MICROMOON_KM:
+        return "micromoon"
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -117,7 +148,9 @@ def previous_blue_moon(before: datetime | None = None) -> datetime:
 # ---------------------------------------------------------------------------
 
 def _fmt(dt: datetime) -> str:
-    return dt.strftime("%B %-d, %Y  %H:%M %Z")
+    base = dt.strftime("%B %-d, %Y  %H:%M %Z")
+    label = moon_label(dt)
+    return f"{base}  ({label})" if label else base
 
 
 # ---------------------------------------------------------------------------
